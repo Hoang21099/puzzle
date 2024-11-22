@@ -8,18 +8,69 @@ import cupLogo from "../assets/cup.svg";
 import soundClick from "../assets/click.mp3";
 import useSound from "use-sound";
 import congrats from "../assets/congrat.mp3";
-import SANTA from "../assets/SANTA.svg";
-
+import SANTA from "../assets/sep.webp";
+import useWindowSize from "react-use/lib/useWindowSize";
+import Confetti from "react-confetti";
 import Question from "../assets/question.svg";
 import { JigsawPuzzle } from "react-jigsaw-puzzle/lib";
 import "react-jigsaw-puzzle/lib/jigsaw-puzzle.css";
 import Modal from "./Modal";
+import useConfetti from "../hooks/useConfetti";
+
+const randomGifts = [
+  "https://www.shutterstock.com/image-photo/beautiful-young-woman-holding-gift-600nw-2143987771.jpg",
+  "https://st2.depositphotos.com/1875497/6131/i/450/depositphotos_61312019-stock-photo-christmas-gift-box.jpg",
+];
+
+const randomQuestions = [
+  { id: 6, question: "Is Tokyo the capital of Japan?", answer: "Yes" },
+  {
+    id: 7,
+    question: "Is Russia the largest country in the world by land area?",
+    answer: "Yes",
+  },
+  {
+    id: 8,
+    question: "Did Leonardo da Vinci paint the Mona Lisa?",
+    answer: "Yes",
+  },
+  { id: 9, question: "Is Au the chemical symbol for gold?", answer: "Yes" },
+  { id: 10, question: "Are giraffes the tallest land animals?", answer: "Yes" },
+  {
+    id: 11,
+    question: "Is Venus the hottest planet in our solar system?",
+    answer: "Yes",
+  },
+  {
+    id: 12,
+    question: "Did J.K. Rowling write the Harry Potter series?",
+    answer: "Yes",
+  },
+  {
+    id: 13,
+    question: "Is the Pacific Ocean the largest ocean on Earth?",
+    answer: "Yes",
+  },
+  {
+    id: 14,
+    question: "Is Washington, D.C. the capital of the United States?",
+    answer: "Yes",
+  },
+  {
+    id: 15,
+    question: "Is Mount Everest the tallest mountain in the world?",
+    answer: "Yes",
+  },
+];
+
 const GameBoard = ({
   size = 20,
   gifts = 10,
   questions = 5,
   obstacles = 10,
 }) => {
+  const { isConfettiVisible, toggleConfetti } = useConfetti();
+
   const [board, setBoard] = useState([]);
   const [playerPosition, setPlayerPosition] = useState([0, 0]);
   const [steps, setSteps] = useState(3);
@@ -27,36 +78,15 @@ const GameBoard = ({
   const [remainingGifts, setRemainingGifts] = useState(gifts);
   const [currentGiftPosition, setCurrentGiftPosition] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
 
   const [play] = useSound(soundClick);
   const [playCongrats] = useSound(congrats);
 
+  const { width, height } = useWindowSize();
+
   useEffect(() => {
     initializeBoard();
-
-    // const handleKeyDown = (event) => {
-    //   switch (event.key) {
-    //     case "ArrowUp":
-    //       handleMove("up");
-    //       break;
-    //     case "ArrowDown":
-    //       handleMove("down");
-    //       break;
-    //     case "ArrowLeft":
-    //       handleMove("left");
-    //       break;
-    //     case "ArrowRight":
-    //       handleMove("right");
-    //       break;
-    //     default:
-    //       break;
-    //   }
-    // };
-
-    // window.addEventListener("keydown", handleKeyDown);
-    // return () => {
-    //   window.removeEventListener("keydown", handleKeyDown);
-    // };
   }, [size, gifts, questions, obstacles]);
 
   const initializeBoard = () => {
@@ -122,30 +152,23 @@ const GameBoard = ({
         break;
     }
 
-    const nextCell = board[newX][newY];
-
     if (
-      nextCell === tuanlocLogo ||
-      nextCell === leafLogo ||
-      nextCell === bellLogo ||
-      nextCell === cupLogo
+      board[newX][newY] === tuanlocLogo ||
+      board[newX][newY] === leafLogo ||
+      board[newX][newY] === bellLogo ||
+      board[newX][newY] === cupLogo
     ) {
-      const answer = prompt(
-        "Solve this question to move to the obstacle: 2 + 2 = ?"
-      );
-      if (answer !== "4") {
-        alert("Wrong answer! You cannot move to the obstacle.");
-        return; // Prevent moving to obstacle positions if the answer is wrong
-      }
+      return; // Prevent moving to obstacle positions
     }
 
     setPlayerPosition([newX, newY]);
     setSteps(steps - 1);
     setVisitedCells((prev) => new Set(prev).add(`${newX},${newY}`));
 
-    if (nextCell === "question") {
+    if (board[newX][newY] === "question") {
       handleQuestion(newX, newY);
-    } else if (nextCell === "gift") {
+    } else if (board[newX][newY] === "gift") {
+      // collectGift(newX, newY);
       setCurrentGiftPosition([newX, newY]);
       setIsModalOpen(true);
     }
@@ -155,61 +178,12 @@ const GameBoard = ({
     }
   };
 
-  // const handleMove = (direction) => {
-  //   if (steps <= 0) return;
-
-  //   play();
-
-  //   const [x, y] = playerPosition;
-  //   let newX = x,
-  //     newY = y;
-
-  //   switch (direction) {
-  //     case "up":
-  //       newX = x > 0 ? x - 1 : x;
-  //       break;
-  //     case "down":
-  //       newX = x < size - 1 ? x + 1 : x;
-  //       break;
-  //     case "left":
-  //       newY = y > 0 ? y - 1 : y;
-  //       break;
-  //     case "right":
-  //       newY = y < size - 1 ? y + 1 : y;
-  //       break;
-  //     default:
-  //       break;
-  //   }
-
-  //   if (
-  //     board[newX][newY] === tuanlocLogo ||
-  //     board[newX][newY] === leafLogo ||
-  //     board[newX][newY] === bellLogo ||
-  //     board[newX][newY] === cupLogo
-  //   ) {
-  //     return; // Prevent moving to obstacle positions
-  //   }
-
-  //   setPlayerPosition([newX, newY]);
-  //   setSteps(steps - 1);
-  //   setVisitedCells((prev) => new Set(prev).add(`${newX},${newY}`));
-
-  //   if (board[newX][newY] === "question") {
-  //     handleQuestion(newX, newY);
-  //   } else if (board[newX][newY] === "gift") {
-  //     // collectGift(newX, newY);
-  //     setCurrentGiftPosition([newX, newY]);
-  //     setIsModalOpen(true);
-  //   }
-
-  //   if (!(steps - 1)) {
-  //     handleQuestion(newX, newY);
-  //   }
-  // };
-
   const handleQuestion = (x, y) => {
-    const answer = prompt("Solve this question: 2 + 2 = ?");
-    if (answer === "4") {
+    const randomIndex = Math.floor(Math.random() * randomQuestions.length);
+    const randomQuestion = randomQuestions[randomIndex];
+
+    const answer = prompt(randomQuestion.question);
+    if (answer === randomQuestion.answer) {
       setSteps(steps + 3);
       const newBoard = [...board];
       newBoard[x][y] = null;
@@ -217,6 +191,11 @@ const GameBoard = ({
     } else {
       alert("Wrong answer!");
     }
+  };
+
+  const handleGetLinkGift = () => {
+    const randomIndex = Math.floor(Math.random() * randomGifts.length);
+    return randomGifts[randomIndex];
   };
 
   const handlePuzzleComplete = () => {
@@ -227,6 +206,9 @@ const GameBoard = ({
     setBoard(newBoard);
     setRemainingGifts(remainingGifts - 1);
     collectGift(x, y);
+    toggleConfetti();
+    setIsSuccessOpen(true);
+    setTimeout(() => toggleConfetti(), 2000);
   };
 
   const collectGift = (x, y) => {
@@ -281,6 +263,15 @@ const GameBoard = ({
     </div>
   );
 
+  const renderSuccess = () => {
+    return (
+      <div className="flex flex-col items-center">
+        <h2 className="text-2xl text-green-500">Congratulations!</h2>
+        <p>You have collected all the gifts!</p>
+      </div>
+    );
+  };
+
   return (
     <div className="flex gap-3">
       <div className="grid grid-cols-custom gap-0.5">
@@ -292,6 +283,22 @@ const GameBoard = ({
               columns={2}
               onSolved={() => handlePuzzleComplete()}
             />
+          </div>
+        </Modal>
+
+        <Modal isOpen={isSuccessOpen} onClose={() => setIsSuccessOpen(false)}>
+          <div className="w-[500px] h-[500px] flex flex-col items-center justify-center bg-white rounded-lg shadow-lg p-4">
+            <img
+              src={handleGetLinkGift()}
+              className="w-full h-auto rounded-lg mb-4"
+              alt="Congratulations on your achievement!"
+            />
+            <button
+              onClick={() => setIsSuccessOpen(false)} // Replace with your desired action
+              className="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-200"
+            >
+              OK
+            </button>
           </div>
         </Modal>
 
@@ -340,7 +347,7 @@ const GameBoard = ({
                   className={`w-[80px] h-[80px] border ${
                     playerPosition[0] === rowIndex &&
                     playerPosition[1] === colIndex
-                      ? "bg-blue-500"
+                      ? "bg-red-200 rounded-full"
                       : visitedCells.has(`${rowIndex},${colIndex}`)
                       ? "bg-yellow-300"
                       : "bg-gray-200"
@@ -378,6 +385,8 @@ const GameBoard = ({
         </div>
         {renderControl()}
       </div>
+
+      {isConfettiVisible && <Confetti width={width} height={height} />}
     </div>
   );
 };

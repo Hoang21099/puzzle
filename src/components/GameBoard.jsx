@@ -1,12 +1,19 @@
-/* eslint-disable react/prop-types */
-// src/components/GameBoard.js
-import React, { useState, useEffect } from "react";
+// /* eslint-disable react/prop-types */
+// // src/components/GameBoard.js
 
-const GameBoard = ({ size = 10, gifts = 10, questions = 5 }) => {
+// src/components/GameBoard.js
+import React, { useState, useEffect, useRef } from "react";
+// import useFireworks from "../hooks/useFirework";
+
+const GameBoard = ({ size = 20, gifts = 10, questions = 5 }) => {
+  const ref = useRef(null);
+  // const { FireworksComponent, toggleFireworks } = useFireworks();
+
   const [board, setBoard] = useState([]);
   const [playerPosition, setPlayerPosition] = useState([0, 0]);
   const [steps, setSteps] = useState(3);
   const [visitedCells, setVisitedCells] = useState(new Set());
+  const [remainingGifts, setRemainingGifts] = useState(gifts);
 
   useEffect(() => {
     initializeBoard();
@@ -25,6 +32,7 @@ const GameBoard = ({ size = 10, gifts = 10, questions = 5 }) => {
     placeItems(newBoard, "question", questions);
     setBoard(newBoard);
     setVisitedCells(new Set(["0,0"]));
+    setRemainingGifts(gifts);
   };
 
   const placeItems = (board, type, count) => {
@@ -40,6 +48,7 @@ const GameBoard = ({ size = 10, gifts = 10, questions = 5 }) => {
   };
 
   const handleMove = (direction) => {
+    ref.current.stop();
     if (steps <= 0) return;
 
     const [x, y] = playerPosition;
@@ -68,31 +77,35 @@ const GameBoard = ({ size = 10, gifts = 10, questions = 5 }) => {
     setVisitedCells((prev) => new Set(prev).add(`${newX},${newY}`));
 
     if (board[newX][newY] === "question") {
-      handleQuestion();
+      handleQuestion(newX, newY);
+    } else if (board[newX][newY] === "gift") {
+      collectGift(newX, newY);
     }
 
     if (!(steps - 1)) {
-      handleQuestion();
+      handleQuestion(newX, newY);
     }
   };
 
-  const handleQuestion = () => {
+  const handleQuestion = (x, y) => {
     const answer = prompt("Solve this question: 2 + 2 = ?");
     if (answer === "4") {
       setSteps(steps + 3);
+      const newBoard = [...board];
+      newBoard[x][y] = null;
+      setBoard(newBoard);
     } else {
       alert("Wrong answer!");
     }
   };
 
-  useEffect(() => {
-    if (
-      steps <= 0 &&
-      board[playerPosition[0]][playerPosition[1]] === "question"
-    ) {
-      handleQuestion();
-    }
-  }, [steps, playerPosition]);
+  const collectGift = (x, y) => {
+    const newBoard = [...board];
+    newBoard[x][y] = null;
+    setBoard(newBoard);
+    setRemainingGifts(remainingGifts - 1);
+    toggleFireworks();
+  };
 
   const handleKeyDown = (event) => {
     switch (event.key) {
@@ -113,6 +126,15 @@ const GameBoard = ({ size = 10, gifts = 10, questions = 5 }) => {
     }
   };
 
+  useEffect(() => {
+    if (
+      steps <= 0 &&
+      board[playerPosition[0]][playerPosition[1]] === "question"
+    ) {
+      handleQuestion(playerPosition[0], playerPosition[1]);
+    }
+  }, [steps, playerPosition]);
+
   return (
     <div>
       <div className="grid grid-cols-custom gap-1">
@@ -120,11 +142,6 @@ const GameBoard = ({ size = 10, gifts = 10, questions = 5 }) => {
           row.map((cell, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}`}
-              //   className={`w-8 h-8 border ${
-              //     playerPosition[0] === rowIndex && playerPosition[1] === colIndex
-              //       ? "bg-blue-500"
-              //       : "bg-gray-200"
-              //   }`}
               className={`w-8 h-8 border ${
                 playerPosition[0] === rowIndex && playerPosition[1] === colIndex
                   ? "bg-blue-500"
@@ -165,6 +182,10 @@ const GameBoard = ({ size = 10, gifts = 10, questions = 5 }) => {
         >
           Right
         </button>
+      </div>
+
+      <div className="mt-4">
+        <p>Total Gifts Remaining: {remainingGifts}</p>
       </div>
     </div>
   );

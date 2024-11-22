@@ -1,14 +1,14 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import tuanlocLogo from "../assets/tuanloc.svg";
 import leafLogo from "../assets/leaf.svg";
-import giftLogo from "../assets/gift.svg";
+import giftLogo from "../assets/SANTA.svg";
 import bellLogo from "../assets/bell.svg";
 import cupLogo from "../assets/cup.svg";
 import soundClick from "../assets/click.mp3";
 import useSound from "use-sound";
 import congrats from "../assets/congrat.mp3";
-import SANTA from "../assets/sep.webp";
+import SANTA from "../assets/test.png";
 import useWindowSize from "react-use/lib/useWindowSize";
 import Confetti from "react-confetti";
 import Question from "../assets/question.svg";
@@ -23,44 +23,54 @@ const randomGifts = [
 ];
 
 const randomQuestions = [
-  { id: 6, question: "Is Tokyo the capital of Japan?", answer: "Yes" },
+  { id: 6, question: "Is Tokyo the capital of Japan? (Yes/No)", answer: "Yes" },
   {
     id: 7,
-    question: "Is Russia the largest country in the world by land area?",
+    question: "Is Russia the largest country in the world by land area? (Yes/No)",
     answer: "Yes",
   },
   {
     id: 8,
-    question: "Did Leonardo da Vinci paint the Mona Lisa?",
+    question: "Did Leonardo da Vinci paint the Mona Lisa? (Yes/No)",
     answer: "Yes",
   },
-  { id: 9, question: "Is Au the chemical symbol for gold?", answer: "Yes" },
-  { id: 10, question: "Are giraffes the tallest land animals?", answer: "Yes" },
+  { id: 9, question: "Is Au the chemical symbol for gold? (Yes/No)", answer: "Yes" },
+  { id: 10, question: "Are giraffes the tallest land animals? (Yes/No)", answer: "Yes" },
   {
     id: 11,
-    question: "Is Venus the hottest planet in our solar system?",
+    question: "Is Venus the hottest planet in our solar system? (Yes/No)",
     answer: "Yes",
   },
   {
     id: 12,
-    question: "Did J.K. Rowling write the Harry Potter series?",
+    question: "Did J.K. Rowling write the Harry Potter series? (Yes/No)",
     answer: "Yes",
   },
   {
     id: 13,
-    question: "Is the Pacific Ocean the largest ocean on Earth?",
+    question: "Is the Pacific Ocean the largest ocean on Earth? (Yes/No)",
     answer: "Yes",
   },
   {
     id: 14,
-    question: "Is Washington, D.C. the capital of the United States?",
+    question: "Is Washington, D.C. the capital of the United States? (Yes/No)",
     answer: "Yes",
   },
   {
     id: 15,
-    question: "Is Mount Everest the tallest mountain in the world?",
+    question: "Is Mount Everest the tallest mountain in the world? (Yes/No)",
     answer: "Yes",
   },
+];
+
+const USER = [
+  "Diem Nguyen",
+  "Thuy Hua",
+  "Thao Nguyen",
+  "Hanh Nguyen",
+  "Huyen Nguyen",
+  "Huong Nguyen",
+  "Huong Nguyen",
 ];
 
 const GameBoard = ({
@@ -126,6 +136,8 @@ const GameBoard = ({
     }
   };
 
+  const lastPosition = useRef([]);
+
   const handleMove = (direction) => {
     if (steps <= 0) return;
 
@@ -165,6 +177,8 @@ const GameBoard = ({
     setSteps(steps - 1);
     setVisitedCells((prev) => new Set(prev).add(`${newX},${newY}`));
 
+    lastPosition.current = [x, y];
+
     if (board[newX][newY] === "question") {
       handleQuestion(newX, newY);
     } else if (board[newX][newY] === "gift") {
@@ -178,24 +192,58 @@ const GameBoard = ({
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      switch (event.key) {
+        case "ArrowUp":
+          handleMove("up");
+          break;
+        case "ArrowDown":
+          handleMove("down");
+          break;
+        case "ArrowLeft":
+          handleMove("left");
+          break;
+        case "ArrowRight":
+          handleMove("right");
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleMove]);
+
   const handleQuestion = (x, y) => {
     const randomIndex = Math.floor(Math.random() * randomQuestions.length);
     const randomQuestion = randomQuestions[randomIndex];
 
-    const answer = prompt(randomQuestion.question);
-    if (answer === randomQuestion.answer) {
+    const answer = prompt(randomQuestion.question, 'yes');
+    if (randomQuestion.answer?.toLowerCase()?.includes(answer)) {
       setSteps(steps + 3);
       const newBoard = [...board];
       newBoard[x][y] = null;
       setBoard(newBoard);
     } else {
       alert("Wrong answer!");
+      setSteps(steps + 1);
+
+      setPlayerPosition(lastPosition.current);
     }
   };
 
   const handleGetLinkGift = () => {
     const randomIndex = Math.floor(Math.random() * randomGifts.length);
     return randomGifts[randomIndex];
+  };
+
+  const handleGetUser = () => {
+    const randomIndex = Math.floor(Math.random() * USER.length);
+    return USER[randomIndex];
   };
 
   const handlePuzzleComplete = () => {
@@ -208,7 +256,7 @@ const GameBoard = ({
     collectGift(x, y);
     toggleConfetti();
     setIsSuccessOpen(true);
-    setTimeout(() => toggleConfetti(), 2000);
+    setTimeout(() => toggleConfetti(), 1000);
   };
 
   const collectGift = (x, y) => {
@@ -217,6 +265,7 @@ const GameBoard = ({
     setBoard(newBoard);
     setRemainingGifts(remainingGifts - 1);
     playCongrats();
+    setSteps(3);
   };
 
   useEffect(() => {
@@ -263,15 +312,6 @@ const GameBoard = ({
     </div>
   );
 
-  const renderSuccess = () => {
-    return (
-      <div className="flex flex-col items-center">
-        <h2 className="text-2xl text-green-500">Congratulations!</h2>
-        <p>You have collected all the gifts!</p>
-      </div>
-    );
-  };
-
   return (
     <div className="flex gap-3">
       <div className="grid grid-cols-custom gap-0.5">
@@ -289,10 +329,15 @@ const GameBoard = ({
         <Modal isOpen={isSuccessOpen} onClose={() => setIsSuccessOpen(false)}>
           <div className="w-[500px] h-[500px] flex flex-col items-center justify-center bg-white rounded-lg shadow-lg p-4">
             <img
-              src={handleGetLinkGift()}
-              className="w-full h-auto rounded-lg mb-4"
+              src={
+                "https://media.istockphoto.com/id/1357890877/vector/cute-dancing-santa-claus-christmas-vector-illustration.jpg?s=612x612&w=0&k=20&c=dLLi6isaG0Qaf_8xGVVE9ishEuk5kWKWwgjxBRgj6fw="
+              }
+              className="w-[50%] h-auto rounded-lg mb-8"
               alt="Congratulations on your achievement!"
             />
+            <p className="text-xl font-semibold text-center text-black mb-4">
+              Santa {handleGetUser()} will give you a gift
+            </p>
             <button
               onClick={() => setIsSuccessOpen(false)} // Replace with your desired action
               className="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-200"
@@ -358,7 +403,7 @@ const GameBoard = ({
                       <img
                         src={SANTA}
                         alt="Santa"
-                        className="w-[80px] h-[80px]"
+                        className="w-[80px] h-[80px] rounded-full"
                       />
                     )}
                   {cell === "gift" && (
